@@ -1,56 +1,86 @@
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
-public class Logger {
+// Enumeração para os diferentes níveis de log
+enum Level {
+    DEBUG, WARNING, ERROR
+}
 
-    private static final String LOG_FILE = "log.txt";
+// Classe Logger com visibilidade de pacote
+class Logger {
+    // Método log com visibilidade de pacote
+    static void log(Level level, String message) {
+        // Obter a hora corrente
+        LocalDateTime timestamp = LocalDateTime.now();
+        String logEntry = "[" + timestamp + "] [" + level + "]: " + message;
 
-    public enum LogLevel {
-        DEBUG, WARNING, ERROR
-    }
-
-    public static void logToConsole(String message, LogLevel level) {
-        String formattedMessage = formatMessage(message, level);
+        // Imprimir mensagem no console com cores diferentes com base no nível do log
         switch (level) {
             case DEBUG:
-                System.out.println("\u001B[32m" + formattedMessage + "\u001B[0m"); // Green
+                System.out.println("\033[92m" + logEntry + "\033[0m");
                 break;
             case WARNING:
-                System.out.println("\u001B[33m" + formattedMessage + "\u001B[0m"); // Yellow
+                System.out.println("\033[93m" + logEntry + "\033[0m");
                 break;
             case ERROR:
-                System.out.println("\u001B[31m" + formattedMessage + "\u001B[0m"); // Red
+                System.out.println("\033[91m" + logEntry + "\033[0m");
                 break;
         }
     }
+}
 
-    public static void logToFile(String message) {
-        try {
-            Files.write(Paths.get(LOG_FILE), (message + "\n").getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+// Classe LoggerFactory com visibilidade de pacote
+class LoggerFactory {
+    // Método onConsole com visibilidade de pacote
+    static Logger onConsole() {
+        return new Logger();
+    }
+
+    // Método onFile com visibilidade de pacote
+    static Logger onFile(String fileName) throws IOException {
+        return new FileLogger(fileName);
+    }
+}
+
+// Classe LoggerConsole com visibilidade de pacote
+class LoggerConsole {
+    // Método log com visibilidade de pacote
+    static void log(Level level, String message) {
+        Logger.log(level, message);
+    }
+}
+
+// Classe LoggerFile com visibilidade de pacote
+class LoggerFile {
+    // Método log com visibilidade de pacote
+    static void log(Level level, String message) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("log.txt", true))) {
+            // Obter a hora corrente
+            LocalDateTime timestamp = LocalDateTime.now();
+            String logEntry = "[" + timestamp + "] [" + level + "]: " + message;
+            // Escrever no arquivo
+            writer.println(logEntry);
         } catch (IOException e) {
-            System.out.println("Erro ao salvar arquivo de log.");
             e.printStackTrace();
         }
     }
+}
 
-    private static String formatMessage(String message, LogLevel level) {
-        LocalDateTime currentTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedTime = currentTime.format(formatter);
-        return "[" + formattedTime + "] [" + level.name() + "] " + message;
-    }
-
+public class Main {
     public static void main(String[] args) {
-        logToConsole("Debug message", LogLevel.DEBUG);
-        logToConsole("Warning message", LogLevel.WARNING);
-        logToConsole("Error message", LogLevel.ERROR);
+        // Exemplo de uso
+        LoggerConsole.log(Level.DEBUG, "This is a debug message");
+        LoggerConsole.log(Level.WARNING, "This is a warning message");
+        LoggerConsole.log(Level.ERROR, "This is an error message");
 
-        logToFile(formatMessage("Debug message", LogLevel.DEBUG));
-        logToFile(formatMessage("Warning message", LogLevel.WARNING));
-        logToFile(formatMessage("Error message", LogLevel.ERROR));
+        try {
+            LoggerFile.log(Level.DEBUG, "This is a debug message");
+            LoggerFile.log(Level.WARNING, "This is a warning message");
+            LoggerFile.log(Level.ERROR, "This is an error message");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
