@@ -1,0 +1,56 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Logger {
+
+    private static final String LOG_FILE = "log.txt";
+
+    public enum LogLevel {
+        DEBUG, WARNING, ERROR
+    }
+
+    public static void logToConsole(String message, LogLevel level) {
+        String formattedMessage = formatMessage(message, level);
+        switch (level) {
+            case DEBUG:
+                System.out.println("\u001B[32m" + formattedMessage + "\u001B[0m"); // Green
+                break;
+            case WARNING:
+                System.out.println("\u001B[33m" + formattedMessage + "\u001B[0m"); // Yellow
+                break;
+            case ERROR:
+                System.out.println("\u001B[31m" + formattedMessage + "\u001B[0m"); // Red
+                break;
+        }
+    }
+
+    public static void logToFile(String message) {
+        try {
+            Files.write(Paths.get(LOG_FILE), (message + "\n").getBytes(), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar arquivo de log.");
+            e.printStackTrace();
+        }
+    }
+
+    private static String formatMessage(String message, LogLevel level) {
+        LocalDateTime currentTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedTime = currentTime.format(formatter);
+        return "[" + formattedTime + "] [" + level.name() + "] " + message;
+    }
+
+    public static void main(String[] args) {
+        logToConsole("Debug message", LogLevel.DEBUG);
+        logToConsole("Warning message", LogLevel.WARNING);
+        logToConsole("Error message", LogLevel.ERROR);
+
+        logToFile(formatMessage("Debug message", LogLevel.DEBUG));
+        logToFile(formatMessage("Warning message", LogLevel.WARNING));
+        logToFile(formatMessage("Error message", LogLevel.ERROR));
+    }
+}
